@@ -19,7 +19,7 @@ const (
 )
 
 // PriceLoader runs ticker data loader and puts symbols price data into the data channel
-func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) {
+func PriceLoader(dataChannel *chan storage.SymbolPrice, errorChannel *chan error) {
 	done := make(chan struct{})
 
 	u := url.URL{Scheme: serverScheme, Host: serverHost, Path: serverPath}
@@ -27,7 +27,7 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		errorChannel <- err
+		*errorChannel <- err
 		return
 	}
 
@@ -41,7 +41,7 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 			data := TickerDataMessage{}
 			err := conn.ReadJSON(&data)
 			if err != nil {
-				errorChannel <- err
+				*errorChannel <- err
 				done <- struct{}{}
 			}
 
@@ -55,8 +55,8 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 				fmt.Printf("Converter error: %s\n", err.Error())
 				continue
 			}
-			
-			dataChannel <- preparedData
+
+			*dataChannel <- preparedData
 		}
 	}()
 

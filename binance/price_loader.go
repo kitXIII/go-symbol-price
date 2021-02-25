@@ -23,7 +23,7 @@ type SymbolPriceBinance struct {
 }
 
 // PriceLoader runs ticker data loader and puts symbols price data into the data channel
-func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) {
+func PriceLoader(dataChannel *chan storage.SymbolPrice, errorChannel *chan error) {
 	done := make(chan struct{})
 	u := url.URL{Scheme: serverScheme, Host: serverHost, Path: serverPath}
 
@@ -32,7 +32,7 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 		for {
 			resp, err := http.Get(u.String())
 			if err != nil {
-				errorChannel <- err
+				*errorChannel <- err
 				done <- struct{}{}
 				continue
 			}
@@ -41,7 +41,7 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 			body, err := ioutil.ReadAll(resp.Body)
 
 			if err != nil {
-				errorChannel <- err
+				*errorChannel <- err
 				done <- struct{}{}
 				continue
 			}
@@ -50,7 +50,7 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 
 			err = json.Unmarshal(body, &data)
 			if err != nil {
-				errorChannel <- err
+				*errorChannel <- err
 				done <- struct{}{}
 				continue
 			}
@@ -58,12 +58,12 @@ func PriceLoader(dataChannel chan storage.SymbolPrice, errorChannel chan error) 
 			for _, item := range data {
 				preparedItem, err := Transform(item)
 				if err != nil {
-					errorChannel <- err
+					*errorChannel <- err
 					done <- struct{}{}
 					continue
 				}
 
-				dataChannel <- preparedItem
+				*dataChannel <- preparedItem
 			}
 			time.Sleep(updateTimeout)
 		}

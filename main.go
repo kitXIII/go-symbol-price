@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"os/signal"
 
 	"price_loader/binance"
 	"price_loader/poloniex"
@@ -13,9 +10,6 @@ import (
 )
 
 func main() {
-	interruptAppChannel := make(chan os.Signal, 1)
-	signal.Notify(interruptAppChannel, os.Interrupt)
-
 	errorChannel := make(chan error)
 	defer close(errorChannel)
 
@@ -27,11 +21,8 @@ func main() {
 	saveChannel := s.GetWriteChannel()
 	defer close(saveChannel)
 
-	go binance.PriceLoader(saveChannel, errorChannel)
-	go poloniex.PriceLoader(saveChannel, errorChannel)
+	go binance.PriceLoader(&saveChannel, &errorChannel)
+	go poloniex.PriceLoader(&saveChannel, &errorChannel)
 
 	server.RunServer(&s)
-
-	<-interruptAppChannel
-	fmt.Printf("\nBye!\n")
 }
